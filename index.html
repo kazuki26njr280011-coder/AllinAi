@@ -206,7 +206,7 @@ function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} 
 function $(s){ return document.querySelector(s); }
 
 var userName=load(LS.name,'');
-var history=[], busy=false, carousel=null, gi=0;
+var convo=[], busy=false, carousel=null, gi=0;
 
 /* ===== escape & markdown ===== */
 function esc(t){ return String(t).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
@@ -256,8 +256,8 @@ function addMsg(role,text){
 }
 function paintHistory(){
   $('#thread').innerHTML='';
-  for(var i=0;i<history.length;i++) addMsg(history[i].role,history[i].text);
-  if(history.length){ $('#hero').style.display='none'; if(carousel) clearInterval(carousel); }
+  for(var i=0;i<convo.length;i++) addMsg(convo[i].role,convo[i].text);
+  if(convo.length){ $('#hero').style.display='none'; if(carousel) clearInterval(carousel); }
   else { $('#hero').style.display=''; }
 }
 
@@ -288,7 +288,7 @@ function send(){
   var text=$('#ta').value.trim(); if(!text||busy) return;
   $('#hero').style.display='none'; if(carousel) clearInterval(carousel);
   $('#ta').value=''; autosize();
-  addMsg('me',text); history.push({role:'me',text:text}); save(LS.hist+'.'+userName,history);
+  addMsg('me',text); convo.push({role:'me',text:text}); save(LS.hist+'.'+userName,convo);
 
   busy=true; $('#send').disabled=true; $('#ta').disabled=true;
   var tm=document.createElement('div'); tm.className='msg ai';
@@ -318,7 +318,7 @@ function send(){
       ||(data&&data.error?('miiboエラー: '+(data.error.message||JSON.stringify(data.error))):null)
       ||'（応答が空でした。miibo側のエージェント公開設定を確認してください）';
     tm.querySelector('.bubble').innerHTML=renderMD(reply);
-    history.push({role:'ai',text:reply}); save(LS.hist+'.'+userName,history);
+    convo.push({role:'ai',text:reply}); save(LS.hist+'.'+userName,convo);
     finish();
   }).catch(function(e){
     clearTimeout(to);
@@ -335,7 +335,7 @@ function enterApp(){
   $('#app').classList.add('on');
   $('#whoName').textContent=userName;
   $('#ava').textContent=(userName?[...userName][0]:'')||'?';
-  history=load(LS.hist+'.'+userName,[]);
+  convo=load(LS.hist+'.'+userName,[]);
   buildDots(); buildSugs(); startGreet(); paintHistory();
   $('#ta').focus();
 }
@@ -353,8 +353,8 @@ $('#send').onclick=send;
 $('#ta').addEventListener('input',autosize);
 $('#ta').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
 $('#btnNew').onclick=function(){
-  if(history.length && !confirm('会話履歴を消して新しく始めますか？')) return;
-  history=[]; save(LS.hist+'.'+userName,history);
+  if(convo.length && !confirm('会話履歴を消して新しく始めますか？')) return;
+  convo=[]; save(LS.hist+'.'+userName,convo);
   $('#thread').innerHTML=''; $('#hero').style.display=''; startGreet();
 };
 $('#btnOut').onclick=function(){
