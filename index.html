@@ -303,8 +303,7 @@ function send(){
 
   fetch(ENDPOINT,{
     method:'POST',
-    // text/plain にすると CORS プリフライト(OPTIONS)が発生せず miibo が応答できる
-    headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({ api_key:API_KEY, agent_id:AGENT_ID, utterance:text, uid:'allin_'+userName }),
     signal:ctrl.signal
   }).then(function(r){
