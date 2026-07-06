@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Allin AI — 会話AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=VT323&family=Instrument+Serif:ital@0;1&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0b06;--bg-2:#141009;--bg-3:#1c160c;--line:#2c2410;
+    --gold:#ffc93c;--gold-2:#ffe08a;--gold-deep:#e8a200;
+    --ink:#f6efdc;--ink-dim:#b8ad8f;
+    --grad:linear-gradient(135deg,#ffe08a 0%,#ffc93c 40%,#e8a200 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:'Space Grotesk','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;background-image:radial-gradient(rgba(255,201,60,.7) 1px,transparent 1.2px);background-size:4px 4px}
+  ::selection{background:var(--gold);color:#0d0b06}
+  ::-webkit-scrollbar{width:10px}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:#3a2f14}
+
+  .app{position:relative;z-index:1;display:none;flex-direction:column;height:100vh}
+  .app.on{display:flex}
+
+  header.bar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(20,16,9,.9),rgba(13,11,6,.6));backdrop-filter:blur(6px)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .chip{width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;font-family:'VT323',monospace;font-size:26px;color:#0d0b06;font-weight:700;box-shadow:0 4px 18px rgba(255,201,60,.25);transform:rotate(-4deg)}
+  .brand h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:26px;line-height:1}
+  .brand h1 b{color:var(--gold);font-style:italic}
+  .brand small{display:block;font-family:'VT323',monospace;font-size:14px;letter-spacing:.22em;color:var(--ink-dim);text-transform:uppercase;margin-top:2px}
+  .bar-actions{display:flex;align-items:center;gap:10px}
+  .who{font-size:13px;color:var(--ink-dim);display:flex;align-items:center;gap:7px}
+  .who b{color:var(--gold);font-weight:600}
+  .who .ava{width:26px;height:26px;border-radius:8px;background:var(--bg-3);border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);font-weight:700;font-size:13px}
+  .ghost{font-family:'VT323',monospace;font-size:17px;letter-spacing:.05em;background:transparent;color:var(--ink-dim);border:1px solid var(--line);padding:7px 13px;border-radius:9px;cursor:pointer;transition:.2s}
+  .ghost:hover{color:var(--gold);border-color:var(--gold-deep)}
+
+  main{flex:1;overflow-y:auto;scroll-behavior:smooth}
+  .wrap{max-width:820px;margin:0 auto;padding:26px 20px 40px}
+  .hero{padding:38px 0 18px;text-align:center;animation:rise .6s ease both}
+  .hero .eyebrow{font-family:'VT323',monospace;font-size:17px;letter-spacing:.2em;color:var(--gold-deep);text-transform:uppercase}
+  .hero .greet{font-family:'Instrument Serif',serif;font-size:clamp(30px,5.4vw,50px);line-height:1.12;margin:14px auto 8px;max-width:660px;color:var(--ink);min-height:1.2em}
+  .hero .greet .k{color:var(--gold);font-style:italic}
+  .hero .sub{color:var(--ink-dim);font-size:15px;max-width:520px;margin:0 auto}
+  .dots{display:flex;justify-content:center;gap:6px;margin-top:18px;flex-wrap:wrap}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dots i.on{background:var(--gold);transform:scale(1.35)}
+  .sugs{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:26px}
+  .sug{font-size:13.5px;color:var(--ink);background:var(--bg-3);border:1px solid var(--line);padding:9px 14px;border-radius:999px;cursor:pointer;transition:.2s}
+  .sug:hover{border-color:var(--gold-deep);color:var(--gold);transform:translateY(-1px)}
+
+  .msg{display:flex;gap:12px;margin:20px 0;animation:rise .35s ease both}
+  .msg .av{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-family:'VT323',monospace;font-size:19px;font-weight:700}
+  .msg.ai .av{background:var(--grad);color:#0d0b06;transform:rotate(-4deg)}
+  .msg.me .av{background:var(--bg-3);color:var(--gold);border:1px solid var(--line);font-family:'Noto Sans JP';font-size:13px}
+  .bubble{padding:12px 15px;border-radius:14px;line-height:1.65;font-size:15px;word-break:break-word;max-width:100%}
+  .msg.me .bubble{white-space:pre-wrap}
+  .bubble strong{color:var(--gold-2);font-weight:700}
+  .bubble em{font-style:italic;color:var(--ink)}
+  .bubble code{background:#000;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:'VT323',monospace;font-size:15px;color:var(--gold)}
+  .bubble pre{background:#000;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;overflow-x:auto}
+  .bubble pre code{background:none;border:0;padding:0;display:block;line-height:1.5;white-space:pre}
+  .bubble a{color:var(--gold);text-decoration:underline}
+  .bubble h3{font-size:16px;margin:10px 0 4px;color:var(--gold-2)}
+  .bubble ul,.bubble ol{margin:6px 0 6px 22px}
+  .bubble li{margin:2px 0}
+  .bubble p{margin:6px 0}
+  .bubble p:first-child,.bubble h3:first-child{margin-top:0}
+  .bubble hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+  .msg.ai .bubble{background:var(--bg-2);border:1px solid var(--line);border-top-left-radius:4px}
+  .msg.me{flex-direction:row-reverse;margin-left:auto}
+  .msg.me .bubble{background:var(--grad);color:#1a1305;font-weight:500;border-top-right-radius:4px}
+  .typing{display:inline-flex;gap:4px;padding:4px 2px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:.6;animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+
+  footer.dock{padding:12px 20px 20px;border-top:1px solid var(--line);background:linear-gradient(0deg,rgba(20,16,9,.95),rgba(13,11,6,.4))}
+  .composer{max-width:820px;margin:0 auto;display:flex;align-items:flex-end;gap:10px;background:var(--bg-2);border:1px solid var(--line);border-radius:18px;padding:8px 8px 8px 16px;transition:.2s}
+  .composer:focus-within{border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(255,201,60,.10)}
+  .composer textarea{flex:1;background:transparent;border:0;outline:0;resize:none;color:var(--ink);font-family:inherit;font-size:15px;line-height:1.5;max-height:160px;padding:8px 0}
+  .composer textarea::placeholder{color:#6c6146}
+  .send{flex:none;width:42px;height:42px;border-radius:12px;border:0;cursor:pointer;background:var(--grad);color:#0d0b06;display:grid;place-items:center;transition:.2s}
+  .send:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .send:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+  .send svg{width:20px;height:20px}
+  .hint{max-width:820px;margin:8px auto 0;text-align:center;font-size:12px;color:#6c6146}
+  .hint b{color:var(--gold-deep)}
+
+  .login{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:20px;background:radial-gradient(120% 90% at 50% 0%,rgba(255,201,60,.10),transparent 55%),var(--bg)}
+  .login::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;background-image:radial-gradient(rgba(255,201,60,.7) 1px,transparent 1.2px);background-size:4px 4px}
+  .card{position:relative;width:min(420px,94vw);text-align:center;animation:rise .5s ease both}
+  .card .bigchip{width:64px;height:64px;border-radius:18px;background:var(--grad);display:grid;place-items:center;font-family:'VT323',monospace;font-size:44px;color:#0d0b06;margin:0 auto 20px;transform:rotate(-5deg);box-shadow:0 10px 40px rgba(255,201,60,.28)}
+  .card h1{font-family:'Instrument Serif',serif;font-size:44px;line-height:1}
+  .card h1 b{color:var(--gold);font-style:italic}
+  .card .tag{font-family:'VT323',monospace;letter-spacing:.24em;color:var(--ink-dim);text-transform:uppercase;margin-top:6px;font-size:15px}
+  .card p.lead{color:var(--ink-dim);font-size:14.5px;margin:22px 0 16px}
+  .field{display:flex;gap:10px;background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 16px;transition:.2s}
+  .field:focus-within{border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(255,201,60,.10)}
+  .field input{flex:1;background:transparent;border:0;outline:0;color:var(--ink);font-family:inherit;font-size:16px}
+  .field input::placeholder{color:#6c6146}
+  .field button{flex:none;padding:0 20px;border:0;border-radius:10px;background:var(--grad);color:#0d0b06;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
+  .field button:hover{filter:brightness(1.08)}
+  .card .fine{margin-top:14px;font-size:12px;color:#6c6146}
+  .card .err{color:#ff8a5c;font-size:13px;margin-top:10px;min-height:16px}
+
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  @media(max-width:600px){.brand small{display:none}.who b{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div class="login" id="login">
+  <div class="card">
+    <div class="bigchip">A</div>
+    <h1>Allin <b>AI</b></h1>
+    <div class="tag">All-in Assistant</div>
+    <p class="lead">ユーザー名を入れて始めましょう。<br>名前ごとに会話が記録されます（日本語OK）。</p>
+    <div class="field">
+      <input id="nameIn" type="text" maxlength="20" placeholder="ユーザー名を入力…" autocomplete="off">
+      <button id="nameGo">はじめる</button>
+    </div>
+    <div class="err" id="nameErr"></div>
+    <div class="fine">入力した名前はこの端末にのみ保存されます。</div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="app" id="app">
+  <header class="bar">
+    <div class="brand">
+      <div class="chip">A</div>
+      <div><h1>Allin <b>AI</b></h1><small>All-in Assistant</small></div>
+    </div>
+    <div class="bar-actions">
+      <div class="who"><span class="ava" id="ava">?</span><b id="whoName">—</b></div>
+      <button class="ghost" id="btnNew" title="新しい会話">＋ 新規</button>
+      <button class="ghost" id="btnOut" title="ログアウト">↩ 変更</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <section class="hero" id="hero">
+        <div class="eyebrow">Welcome to Allin</div>
+        <div class="greet" id="greet"></div>
+        <div class="sub">Allinのことなら何でも聞いてください。下に入力して、いざ勝負。</div>
+        <div class="dots" id="dots"></div>
+        <div class="sugs" id="sugs"></div>
+      </section>
+      <div id="thread"></div>
+    </div>
+  </main>
+
+  <footer class="dock">
+    <div class="composer">
+      <textarea id="ta" rows="1" placeholder="Allin AI にメッセージを送る…"></textarea>
+      <button class="send" id="send" title="送信">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+    <div class="hint">Enter で送信 / Shift+Enter で改行 ・ 会話は<b>この端末に保存</b></div>
+  </footer>
+</div>
+
+<script>
+/* ===== miibo 接続情報（埋め込み） ===== */
+var API_KEY  = 'b2c51527d183883ae0a21a6cf53e75ba013c10e5ef6bf9d861003f691073c9ed';
+var AGENT_ID = '34e9e7d7-6766-4f44-8755-74dfb936fd07';
+var ENDPOINT = 'https://api-mebo.dev/api';
+
+/* ===== 20種のあいさつ ===== */
+var GREETINGS = [
+  "おはようございます。今日もギャンブルをするんですか？",
+  "おはようございます。何かわからないことはありますか？",
+  "こんにちは！今日はどんな勝負に挑みますか？",
+  "ようこそ Allin へ。運試しの準備はいいですか？",
+  "お帰りなさい。今日のツキはどうですか？",
+  "こんばんは。今夜も一勝負いきますか？",
+  "やあ！Allin について何でも聞いてくださいね。",
+  "いらっしゃい。チップは足りていますか？",
+  "準備はいいですか？オールインの時間です。",
+  "こんにちは。今日の戦略、一緒に考えましょう。",
+  "ようこそ。運命の一手、決めますか？",
+  "お待ちしていました。今日は何を賭けますか？",
+  "こんばんは。勝率を上げるコツ、知りたいですか？",
+  "さあ始めましょう。今日はツイてますよ。",
+  "Allin へようこそ。まずはルールの確認からしますか？",
+  "やあ相棒。今日のゲームプランは？",
+  "こんにちは。負けを取り返す作戦を練りますか？",
+  "ようこそ。ビギナーですか？それとも常連さん？",
+  "お疲れさまです。ひと勝負、いかがですか？",
+  "こんにちは。何かお手伝いできることはありますか？"
+];
+var SUGGESTIONS = ["Allin ってどんなサーバー？","初心者におすすめの遊び方は？","今日の運勢を占って","勝率を上げるコツを教えて"];
+
+/* ===== storage ===== */
+var LS={ name:'allin.name', hist:'allin.history' };
+function load(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function $(s){ return document.querySelector(s); }
+
+var userName=load(LS.name,'');
+var history=[], busy=false, carousel=null, gi=0;
+
+/* ===== escape & markdown ===== */
+function esc(t){ return String(t).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+function renderMD(src){
+  try{
+    var blocks=[];
+    var t=String(src).replace(/```(\w*)\n?([\s\S]*?)```/g,function(_,l,c){ blocks.push(c); return ""+(blocks.length-1)+""; });
+    t=esc(t);
+    t=t.replace(/`([^`]+)`/g,function(m,c){ return "<code>"+c+"</code>"; });
+    t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    t=t.replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<em>$2</em>');
+    t=t.replace(/(^|[^_])_([^_\n]+)_/g,'$1<em>$2</em>');
+    var lines=t.split('\n'), html='', list=null;
+    function closeList(){ if(list){ html+='</'+list+'>'; list=null; } }
+    for(var i=0;i<lines.length;i++){
+      var ln=lines[i];
+      if(/^\s*(-{3,}|\*{3,})\s*$/.test(ln)){ closeList(); html+='<hr>'; continue; }
+      var h=ln.match(/^\s*#{1,6}\s+(.*)$/); if(h){ closeList(); html+='<h3>'+h[1]+'</h3>'; continue; }
+      var ul=ln.match(/^\s*[-*・]\s+(.*)$/);
+      var ol=ln.match(/^\s*\d+[.)]\s+(.*)$/);
+      if(ul){ if(list!=='ul'){ closeList(); html+='<ul>'; list='ul'; } html+='<li>'+ul[1]+'</li>'; continue; }
+      if(ol){ if(list!=='ol'){ closeList(); html+='<ol>'; list='ol'; } html+='<li>'+ol[1]+'</li>'; continue; }
+      closeList();
+      if(ln.trim()==='') html+='<br>'; else html+='<p>'+ln+'</p>';
+    }
+    closeList();
+    html=html.replace(/(\d+)/g,function(m,i){
+      var c=blocks[+i]; if(c==null) return '';
+      return '<pre><code>'+esc(c).replace(/\n$/,'')+'</code></pre>';
+    });
+    return html;
+  }catch(e){
+    return esc(src).replace(/\n/g,'<br>');
+  }
+}
+
+/* ===== thread ===== */
+function scroll(){ requestAnimationFrame(function(){ var m=$('#main'); m.scrollTop=m.scrollHeight; }); }
+function addMsg(role,text){
+  var m=document.createElement('div'); m.className='msg '+role;
+  var av=role==='ai'?'A':((userName?[...userName][0]:'')||'?');
+  var body=role==='ai'?renderMD(text):esc(text);
+  m.innerHTML='<div class="av">'+esc(av)+'</div><div class="bubble">'+body+'</div>';
+  $('#thread').appendChild(m); scroll(); return m;
+}
+function paintHistory(){
+  $('#thread').innerHTML='';
+  for(var i=0;i<history.length;i++) addMsg(history[i].role,history[i].text);
+  if(history.length){ $('#hero').style.display='none'; if(carousel) clearInterval(carousel); }
+  else { $('#hero').style.display=''; }
+}
+
+/* ===== greeting ===== */
+function buildDots(){
+  var d=$('#dots'); d.innerHTML='';
+  GREETINGS.forEach(function(_,i){ var it=document.createElement('i'); it.onclick=function(){ gi=i; renderGreet(); }; d.appendChild(it); });
+}
+function renderGreet(){
+  var g=GREETINGS[gi];
+  $('#greet').innerHTML=g.replace(/(Allin|ギャンブル|勝負|オールイン|勝率)/g,'<span class="k">$1</span>');
+  var ch=$('#dots').children;
+  for(var i=0;i<ch.length;i++) ch[i].classList.toggle('on',i===gi);
+}
+function startGreet(){
+  gi=Math.floor(Math.random()*GREETINGS.length); renderGreet();
+  if(carousel) clearInterval(carousel);
+  carousel=setInterval(function(){ gi=(gi+1)%GREETINGS.length; renderGreet(); },4200);
+}
+function buildSugs(){
+  var s=$('#sugs'); s.innerHTML='';
+  SUGGESTIONS.forEach(function(t){ var b=document.createElement('button'); b.className='sug'; b.textContent=t; b.onclick=function(){ $('#ta').value=t; send(); }; s.appendChild(b); });
+}
+
+/* ===== send ===== */
+function autosize(){ var t=$('#ta'); t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,160)+'px'; }
+function send(){
+  var text=$('#ta').value.trim(); if(!text||busy) return;
+  $('#hero').style.display='none'; if(carousel) clearInterval(carousel);
+  $('#ta').value=''; autosize();
+  addMsg('me',text); history.push({role:'me',text:text}); save(LS.hist+'.'+userName,history);
+
+  busy=true; $('#send').disabled=true; $('#ta').disabled=true;
+  var tm=document.createElement('div'); tm.className='msg ai';
+  tm.innerHTML='<div class="av">A</div><div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>';
+  $('#thread').appendChild(tm); scroll();
+
+  function finish(){ busy=false; $('#send').disabled=false; $('#ta').disabled=false; scroll(); $('#ta').focus(); }
+  function fail(msg){ tm.querySelector('.bubble').innerHTML='<span style="color:#ff8a5c">'+esc(msg)+'</span>'; finish(); }
+
+  var ctrl=new AbortController();
+  var to=setTimeout(function(){ ctrl.abort(); },20000);
+
+  fetch(ENDPOINT,{
+    method:'POST',
+    // text/plain にすると CORS プリフライト(OPTIONS)が発生せず miibo が応答できる
+    headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    body:JSON.stringify({ api_key:API_KEY, agent_id:AGENT_ID, utterance:text, uid:'allin_'+userName }),
+    signal:ctrl.signal
+  }).then(function(r){
+    clearTimeout(to);
+    return r.text().then(function(raw){
+      var data=null; try{ data=JSON.parse(raw); }catch(e){}
+      if(!r.ok){ throw new Error('サーバー応答 '+r.status+(raw?(' : '+raw.slice(0,120)):'')); }
+      return data;
+    });
+  }).then(function(data){
+    var reply=(data&&data.bestResponse&&data.bestResponse.utterance)||(data&&data.utterance)||(data&&data.response)
+      ||(data&&data.error?('miiboエラー: '+(data.error.message||JSON.stringify(data.error))):null)
+      ||'（応答が空でした。miibo側のエージェント公開設定を確認してください）';
+    tm.querySelector('.bubble').innerHTML=renderMD(reply);
+    history.push({role:'ai',text:reply}); save(LS.hist+'.'+userName,history);
+    finish();
+  }).catch(function(e){
+    clearTimeout(to);
+    var m=(e&&e.name==='AbortError')?'応答がありません（20秒でタイムアウト）。':
+          '通信に失敗しました：'+(e&&e.message?e.message:e)+
+          '\n※ローカルファイル(file://)で開くとCORSで弾かれることがあります。サーバー上で開くか、miiboの許可ドメイン設定を確認してください。';
+    fail(m);
+  });
+}
+
+/* ===== enter app / login ===== */
+function enterApp(){
+  $('#login').style.display='none';
+  $('#app').classList.add('on');
+  $('#whoName').textContent=userName;
+  $('#ava').textContent=(userName?[...userName][0]:'')||'?';
+  history=load(LS.hist+'.'+userName,[]);
+  buildDots(); buildSugs(); startGreet(); paintHistory();
+  $('#ta').focus();
+}
+function doLogin(){
+  var v=$('#nameIn').value.trim();
+  if(!v){ $('#nameErr').textContent='ユーザー名を入力してください。'; return; }
+  if(v.length>20){ $('#nameErr').textContent='20文字以内で入力してください。'; return; }
+  userName=v; save(LS.name,userName); enterApp();
+}
+
+/* ===== bind events (always runs) ===== */
+$('#nameGo').onclick=doLogin;
+$('#nameIn').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
+$('#send').onclick=send;
+$('#ta').addEventListener('input',autosize);
+$('#ta').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+$('#btnNew').onclick=function(){
+  if(history.length && !confirm('会話履歴を消して新しく始めますか？')) return;
+  history=[]; save(LS.hist+'.'+userName,history);
+  $('#thread').innerHTML=''; $('#hero').style.display=''; startGreet();
+};
+$('#btnOut').onclick=function(){
+  $('#app').classList.remove('on');
+  $('#login').style.display='grid';
+  $('#nameIn').value=userName; $('#nameErr').textContent=''; $('#nameIn').focus();
+};
+
+/* ===== init ===== */
+if(userName){ $('#nameIn').value=userName; enterApp(); } else { $('#nameIn').focus(); }
+</script>
+</body>
+</html>
